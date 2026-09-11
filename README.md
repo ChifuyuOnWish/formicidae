@@ -53,7 +53,3 @@ formicidae/
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for the branching model, commit
 message convention (Conventional Commits), and pull request rules. All
 changes land on `main` via pull request — direct pushes are blocked.
-
-## License
-
-TBD.
