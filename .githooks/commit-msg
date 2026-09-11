@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# commit-msg hook — enforces the Conventional Commits format defined in
+# CONTRIBUTING.md: <type>(<scope>): <description>
+#
+# Installed via scripts/install-hooks.sh (sets core.hooksPath=.githooks).
+set -euo pipefail
+
+COMMIT_MSG_FILE="$1"
+SUBJECT=$(head -n1 "$COMMIT_MSG_FILE")
+
+# Allow merge/revert commits through untouched (git generates these itself).
+if [[ "$SUBJECT" =~ ^(Merge|Revert) ]]; then
+  exit 0
+fi
+
+TYPES="feat|fix|docs|refactor|perf|test|chore|research"
+PATTERN="^(${TYPES})(\([a-z0-9-]+\))?: .{1,}$"
+
+if [[ ! "$SUBJECT" =~ $PATTERN ]]; then
+  echo "❌ Commit message rejected:"
+  echo "   \"$SUBJECT\""
+  echo
+  echo "Expected format: <type>(<scope>): <description>"
+  echo "  type  : one of feat, fix, docs, refactor, perf, test, chore, research"
+  echo "  scope : optional, lowercase, e.g. pheromone, colony, caste, ui, ci"
+  echo
+  echo "Examples:"
+  echo "  feat(pheromone): implement deposit merge with position drift"
+  echo "  fix(colony): correct room upkeep cost applying twice"
+  echo "  research(pheromone): benchmark spatial hash vs linear scan"
+  exit 1
+fi
+
+# Soft warning (non-blocking) if the subject line is long — GitHub truncates
+# subjects past ~72 chars in most UI views.
+if [[ ${#SUBJECT} -gt 72 ]]; then
+  echo "⚠️  Warning: commit subject is ${#SUBJECT} chars (recommended ≤72)."
+fi
+
+exit 0

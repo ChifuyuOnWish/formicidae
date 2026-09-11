@@ -1,0 +1,66 @@
+name: Lint commits & branch naming
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check branch name
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          TYPES="feat|fix|docs|refactor|chore|research"
+          PATTERN="^(${TYPES})/[a-z0-9]+(-[a-z0-9]+)*$"
+          if [[ ! "$HEAD_REF" =~ $PATTERN ]]; then
+            echo "❌ Branch name \"$HEAD_REF\" doesn't match <type>/<short-description>."
+            echo "   Allowed types: feat, fix, docs, refactor, chore, research"
+            exit 1
+          fi
+          echo "✅ Branch name OK: $HEAD_REF"
+
+      - name: Check PR title (Conventional Commits)
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          TYPES="feat|fix|docs|refactor|perf|test|chore|research"
+          PATTERN="^(${TYPES})(\([a-z0-9-]+\))?: .{1,}$"
+          if [[ ! "$PR_TITLE" =~ $PATTERN ]]; then
+            echo "❌ PR title doesn't match <type>(<scope>): <description>."
+            echo "   Got: \"$PR_TITLE\""
+            echo "   This title becomes the squash-merge commit message on main."
+            exit 1
+          fi
+          echo "✅ PR title OK: $PR_TITLE"
+
+      - name: Check every commit message in the PR
+        run: |
+          TYPES="feat|fix|docs|refactor|perf|test|chore|research"
+          PATTERN="^(${TYPES})(\([a-z0-9-]+\))?: .{1,}$"
+          FAILED=0
+          # Compare against the PR base to list only commits introduced by this PR.
+          git fetch origin "${{ github.base_ref }}" --depth=50
+          for sha in $(git rev-list origin/${{ github.base_ref }}..HEAD); do
+            subject=$(git log -1 --format=%s "$sha")
+            if [[ "$subject" =~ ^(Merge|Revert) ]]; then
+              continue
+            fi
+            if [[ ! "$subject" =~ $PATTERN ]]; then
+              echo "❌ $sha: \"$subject\""
+              FAILED=1
+            fi
+          done
+          if [[ "$FAILED" -eq 1 ]]; then
+            echo
+            echo "One or more commits don't match <type>(<scope>): <description>."
+            echo "Allowed types: feat, fix, docs, refactor, perf, test, chore, research"
+            exit 1
+          fi
+          echo "✅ All commit messages OK"

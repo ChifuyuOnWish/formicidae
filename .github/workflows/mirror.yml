@@ -1,0 +1,30 @@
+name: Mirror to backup repo
+
+# Mirrors ONLY main and tags to a second GitHub repository (backup/evaluated
+# copy) on every push to main. Research branches (research/*) and any other
+# work-in-progress branches are never pushed here — this keeps the evaluated
+# repo limited to reviewed, merged work, while research exploration can live
+# in the same source repo without ever appearing in the backup.
+
+on:
+  push:
+    branches: ["main"]
+    tags: ["**"]
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Push main + tags to backup repo
+        env:
+          MIRROR_TOKEN: ${{ secrets.MIRROR_TOKEN }}
+          MIRROR_REPO_PATH: ${{ secrets.MIRROR_REPO_PATH }} # e.g. yourusername/formicidae-backup
+        run: |
+          git remote add backup "https://${MIRROR_TOKEN}@github.com/${MIRROR_REPO_PATH}.git"
+          git push backup main:main --force
+          git push backup --tags

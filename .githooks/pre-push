@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# pre-push hook — enforces the branch naming convention defined in
+# CONTRIBUTING.md: <type>/<short-description>
+#
+# Installed via scripts/install-hooks.sh (sets core.hooksPath=.githooks).
+set -euo pipefail
+
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+# main is exempt (protected on GitHub anyway; this hook only guards local
+# feature-branch naming, not push permissions).
+if [[ "$BRANCH" == "main" || "$BRANCH" == "HEAD" ]]; then
+  exit 0
+fi
+
+TYPES="feat|fix|docs|refactor|chore|research"
+PATTERN="^(${TYPES})/[a-z0-9]+(-[a-z0-9]+)*$"
+
+if [[ ! "$BRANCH" =~ $PATTERN ]]; then
+  echo "❌ Push rejected — branch name doesn't follow convention:"
+  echo "   \"$BRANCH\""
+  echo
+  echo "Expected format: <type>/<short-description>"
+  echo "  type  : one of feat, fix, docs, refactor, chore, research"
+  echo "  description : lowercase, hyphen-separated, e.g. deposit-merge"
+  echo
+  echo "Examples:"
+  echo "  feat/deposit-merge"
+  echo "  fix/decay-double-apply"
+  echo "  research/spatial-hash-benchmark"
+  echo
+  echo "Rename this branch with: git branch -m <new-name>"
+  exit 1
+fi
+
+exit 0
