@@ -155,3 +155,11 @@ Approfondissement et éléments bonus de la portée Could Have.
 
 **Étape 12: Soutenance finale**
 Build jouable complet, documentation finale.
+
+
+
+
+
+1 majeures 2 mineures
+2 majeures 4 mineures
+
