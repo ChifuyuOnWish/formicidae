@@ -24,6 +24,13 @@ public:
     bool IsValidRedirectionAnchor(const FVector& Position) const;
     bool TryPlaceRedirection(const TArray<FVector>& Path);
 
+    void ForEach(TFunctionRef<void(const FPheromoneDeposit&)> Visitor) const;
+    int32 Count() const;
+
+#if !UE_BUILD_SHIPPING
+    void Clear();
+#endif
+
 private:
     UPROPERTY()
     TObjectPtr<UDepositFactory> DepositFactory;
