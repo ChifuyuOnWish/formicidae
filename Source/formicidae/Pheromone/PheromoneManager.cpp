@@ -206,3 +206,23 @@ bool UPheromoneManager::TryMergeIntoExisting(const FPheromoneDeposit& NewDeposit
 
     return true;
 }
+
+void UPheromoneManager::ForEach(TFunctionRef<void(const FPheromoneDeposit&)> Visitor) const
+{
+    for (const FPheromoneDeposit& Entry : Deposits)
+    {
+        Visitor(Entry);
+    }
+}
+
+#if !UE_BUILD_SHIPPING
+void UPheromoneManager::Clear()
+{
+    Deposits.Reset();
+}
+#endif
+
+int32 UPheromoneManager::Count() const
+{
+    return Deposits.Num();
+}
