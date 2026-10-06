@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "PheromoneDeposit.generated.h"
 
 UENUM(BlueprintType)
 enum class EPheromoneDepositOrigin : uint8
@@ -23,40 +24,20 @@ struct FPheromoneDeposit
     GENERATED_BODY()
 
     UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Pheromone Deposit")
-    FVector Position;
+    FVector Position = FVector::ZeroVector;
 
     UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Pheromone Deposit")
-    float Strength;
+    float Strength = 0.f;
 
     UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Pheromone Deposit")
-    float DecayRate;
+    float DecayRate = 0.f;
 
     UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Pheromone Deposit")
-    float MaxStrength;
+    float MaxStrength = 0.f;
 
     UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Pheromone Deposit")
-    EPheromoneDepositOrigin Origin;
+    EPheromoneDepositOrigin Origin = EPheromoneDepositOrigin::ANT;
 
     UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Pheromone Deposit")
-    EPheromoneDepositType Type;
-
-    FPheromoneDeposit()
-        : Position(FVector::ZeroVector)
-        , Strength(0.0f)
-        , DecayRate(0.0f)
-        , MaxStrength(0.0f)
-        , Origin(EPheromoneDepositOrigin::ANT)
-        , Type(EPheromoneDepositType::FORAGE)
-    {
-    }
-
-    FPheromoneDeposit(FVector InPosition, float InStrength, float InDecayRate, float InMaxStrength, EPheromoneDepositOrigin InOrigin, EPheromoneDepositType InType)
-        : Position(InPosition)
-        , Strength(InStrength)
-        , DecayRate(InDecayRate)
-        , MaxStrength(InMaxStrength)
-        , Origin(InOrigin)
-        , Type(InType)
-    {
-    }
+    EPheromoneDepositType Type = EPheromoneDepositType::FORAGE;
 };
