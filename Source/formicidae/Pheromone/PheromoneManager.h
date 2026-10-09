@@ -38,4 +38,8 @@ private:
     const UPheromoneSettings* Settings = nullptr;
     bool TryMergeIntoExisting(const FPheromoneDeposit& NewDeposit);
     float GetRadius(const FPheromoneDeposit& Entry) const;
+
+#if !UE_BUILD_SHIPPING
+    void DrawDebug() const;
+#endif
 };
