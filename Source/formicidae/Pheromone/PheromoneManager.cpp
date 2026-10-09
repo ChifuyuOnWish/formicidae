@@ -2,6 +2,56 @@
 #include "DepositFactory.h"
 #include "PheromoneSettings.h"
 #include "Engine/World.h"
+#include "HAL/IConsoleManager.h"
+#include "DrawDebugHelpers.h"
+
+#if !UE_BUILD_SHIPPING
+static TAutoConsoleVariable<int32> CVarPheromoneDebug(
+    TEXT("pheromone.debug"),
+    0,
+    TEXT("Draws every pheromone deposit. 0 = off, 1 = on."),
+    ECVF_Default);
+
+static const TCHAR* TypeLetter(EPheromoneDepositType Type)
+{
+    switch (Type)
+    {
+    case EPheromoneDepositType::FORAGE:      return TEXT("F");
+    case EPheromoneDepositType::REDIRECTION: return TEXT("R");
+    case EPheromoneDepositType::ALARM:       return TEXT("A");
+    }
+    return TEXT("?");
+}
+
+void UPheromoneManager::DrawDebug() const
+{
+    const UWorld* World = GetWorld();
+    if (!World)
+    {
+        return;
+    }
+
+    for (const FPheromoneDeposit& Entry : Deposits)
+    {
+        const FVector Center = Entry.Position + FVector(0.0, 0.0, 5.0);
+
+        const FColor Color = (Entry.Origin == EPheromoneDepositOrigin::ANT) ? FColor::Green : FColor::Cyan;
+
+        DrawDebugCircle(World, Center, GetRadius(Entry), 24, Color,
+            false,
+            -1.f,
+            0,
+            2.f,
+            FVector(1.0, 0.0, 0.0), FVector(0.0, 1.0, 0.0),
+            false);
+
+        DrawDebugString(World, Center + FVector(0.0, 0.0, 20.0),
+            FString::Printf(TEXT("%s %.0f"), TypeLetter(Entry.Type), Entry.Strength),
+            nullptr, Color, 0.f, true);
+    }
+}
+
+#endif
 
 bool UPheromoneManager::ShouldCreateSubsystem(UObject* Outer) const
 {
@@ -30,6 +80,12 @@ void UPheromoneManager::Tick(float DeltaTime)
         Entry.Strength -= Entry.DecayRate * DeltaTime;
     }
     Deposits.RemoveAllSwap([](const FPheromoneDeposit& Entry) { return Entry.Strength <= 0.f; });
+#if !UE_BUILD_SHIPPING
+    if (CVarPheromoneDebug.GetValueOnGameThread() > 0)
+    {
+        DrawDebug();
+    }
+#endif
 }
 
 TStatId UPheromoneManager::GetStatId() const
