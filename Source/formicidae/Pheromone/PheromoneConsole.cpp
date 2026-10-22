@@ -1,7 +1,11 @@
 #include "CoreMinimal.h"
 #include "Engine/World.h"
-#include "PheromoneManager.h"
+#include "EngineUtils.h"
+#include "GameFramework/PlayerController.h"
+#include "GameFramework/Pawn.h"
 #include "Misc/DefaultValueHelper.h"
+#include "PheromoneManager.h"
+#include "Ant/AntAgent.h"
 
 #if !UE_BUILD_SHIPPING
 
@@ -148,6 +152,69 @@ static void ClearDeposits(const TArray<FString>&, UWorld* World)
     UE_LOG(LogPheromoneDebug, Log, TEXT("Cleared all pheromone deposits."));
 }
 
+static void AntSpawn(const TArray<FString>&, UWorld* World)
+{
+    if (!World)
+    {
+        UE_LOG(LogPheromoneDebug, Warning, TEXT("No world available for this command."));
+        return;
+    }
+
+    FVector SpawnLocation = FVector::ZeroVector;
+
+    const APlayerController* PlayerController = World->GetFirstPlayerController();
+    const APawn* Pawn = PlayerController ? PlayerController->GetPawn() : nullptr;
+    if (Pawn)
+    {
+        FVector Forward = PlayerController->GetControlRotation().Vector();
+        Forward.Z = 0.0;
+        Forward = Forward.GetSafeNormal();
+        if (Forward.IsNearlyZero())
+        {
+            Forward = FVector::ForwardVector;
+        }
+
+        SpawnLocation = Pawn->GetActorLocation() + Forward * 400.0;
+        SpawnLocation.Z = 0.0;
+    }
+
+    FActorSpawnParameters SpawnParams;
+    SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+    AAntAgent* NewAnt = World->SpawnActor<AAntAgent>(AAntAgent::StaticClass(), SpawnLocation, FRotator::ZeroRotator, SpawnParams);
+    if (NewAnt)
+    {
+        UE_LOG(LogPheromoneDebug, Log, TEXT("Spawned ant agent at %s."), *SpawnLocation.ToString());
+    }
+    else
+    {
+        UE_LOG(LogPheromoneDebug, Warning, TEXT("Failed to spawn ant agent."));
+    }
+}
+
+static void AntClear(const TArray<FString>&, UWorld* World)
+{
+    if (!World)
+    {
+        UE_LOG(LogPheromoneDebug, Warning, TEXT("No world available for this command."));
+        return;
+    }
+
+    int32 ClearedCount = 0;
+
+    for (TActorIterator<AAntAgent> It(World); It; ++It)
+    {
+        AAntAgent* Ant = *It;
+        if (Ant)
+        {
+            Ant->Destroy();
+            ++ClearedCount;
+        }
+    }
+
+    UE_LOG(LogPheromoneDebug, Log, TEXT("Cleared %d ant agents."), ClearedCount);
+}
+
 static FAutoConsoleCommandWithWorldAndArgs DumpCommand(
     TEXT("pheromone.dump"),
     TEXT("Logs every live pheromone deposit."),
@@ -162,5 +229,15 @@ static FAutoConsoleCommandWithWorldAndArgs ClearCommand(
     TEXT("pheromone.clear"),
     TEXT("Clears all pheromone deposits."),
     FConsoleCommandWithWorldAndArgsDelegate::CreateStatic(&ClearDeposits));
+
+static FAutoConsoleCommandWithWorldAndArgs AntSpawnCommand(
+    TEXT("ant.spawn"),
+    TEXT("Spawns a test ant agent at the player's location."),
+    FConsoleCommandWithWorldAndArgsDelegate::CreateStatic(&AntSpawn));
+
+static FAutoConsoleCommandWithWorldAndArgs AntClearCommand(
+    TEXT("ant.clear"),
+    TEXT("Clears all ant agents."),
+    FConsoleCommandWithWorldAndArgsDelegate::CreateStatic(&AntClear));
 
 #endif
