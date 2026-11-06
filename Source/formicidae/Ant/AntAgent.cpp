@@ -44,11 +44,6 @@ void AAntAgent::SetHeading(const FVector& NewHeading)
     DesiredHeading = Heading;
 }
 
-void AAntAgent::SetFood(AFoodSource* NewFood)
-{
-    Food = NewFood;
-}
-
 void AAntAgent::FindHome()
 {
     Home = nullptr;
@@ -97,10 +92,10 @@ void AAntAgent::UpdateState()
 
     if (State == EAntState::Exploring)
     {
-        AFoodSource* F = Food.Get();
-        if (F && FVector::Dist2D(Here, F->GetActorLocation()) <= F->PickupRadius)
+        AFoodSource* Source = Food.Get();
+        if (Source && FVector::Dist2D(Here, Source->GetActorLocation()) <= Source->PickupRadius)
         {
-            const int32 Taken = F->TryTake(CarryCapacity);
+            const int32 Taken = Source->TryTake(CarryCapacity);
             if (Taken > 0)
             {
                 Carried = Taken;
@@ -108,9 +103,9 @@ void AAntAgent::UpdateState()
                 DistanceSinceDeposit = 0.f;
                 DecisionTimer = 0.f;
 
-                if (const AAntHome* H = Home.Get())
+                if (const AAntHome* Nest = Home.Get())
                 {
-                    FVector ToHome = H->GetActorLocation() - Here;
+                    FVector ToHome = Nest->GetActorLocation() - Here;
                     ToHome.Z = 0.0;
                     if (!ToHome.IsNearlyZero())
                     {
@@ -128,10 +123,10 @@ void AAntAgent::UpdateState()
     }
     else
     {
-        AAntHome* H = Home.Get();
-        if (H && FVector::Dist2D(Here, H->GetActorLocation()) <= H->ReceiveRadius)
+        AAntHome* Nest = Home.Get();
+        if (Nest && FVector::Dist2D(Here, Nest->GetActorLocation()) <= Nest->ReceiveRadius)
         {
-            H->Store(Carried);
+            Nest->Store(Carried);
             Carried = 0;
             ++TripCount;
             State = EAntState::Exploring;
@@ -156,9 +151,9 @@ FVector AAntAgent::ChooseDirection()
         {
             FindHome();
         }
-        if (const AAntHome* H = Home.Get())
+        if (const AAntHome* Nest = Home.Get())
         {
-            FVector ToHome = H->GetActorLocation() - Here;
+            FVector ToHome = Nest->GetActorLocation() - Here;
             ToHome.Z = 0.0;
             if (!ToHome.IsNearlyZero())
             {
@@ -173,9 +168,9 @@ FVector AAntAgent::ChooseDirection()
     {
         FindFood();
     }
-    if (const AFoodSource* F = Food.Get())
+    if (const AFoodSource* Source = Food.Get())
     {
-        FVector ToFood = F->GetActorLocation() - Here;
+        FVector ToFood = Source->GetActorLocation() - Here;
         ToFood.Z = 0.0;
         if (!ToFood.IsNearlyZero())
         {

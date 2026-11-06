@@ -26,7 +26,6 @@ public:
     virtual void Tick(float DeltaTime) override;
 
     void SetHeading(const FVector& NewHeading);
-    void SetFood(AFoodSource* NewFood);
 
     UPROPERTY(EditAnywhere, Category = "Ant|Movement")
     float MoveSpeed = 150.f;
@@ -37,14 +36,12 @@ public:
     UPROPERTY(EditAnywhere, Category = "Ant|Sensing")
     float SenseRadius = 60.f;
 
-    // Half the cone width. 70 means a 140 degree cone.
     UPROPERTY(EditAnywhere, Category = "Ant|Sensing")
     float ConeHalfAngleDeg = 70.f;
 
     UPROPERTY(EditAnywhere, Category = "Ant|Sensing")
     float DeadZoneRadius = 15.f;
 
-    // Seconds between decisions. 0 means every tick.
     UPROPERTY(EditAnywhere, Category = "Ant|Sensing")
     float DecisionInterval = 0.2f;
 
