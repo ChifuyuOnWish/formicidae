@@ -9,7 +9,8 @@
 #include "PheromoneManager.h"
 #include "PheromoneSettings.h"
 #include "Ant/AntAgent.h"
-// #include "Ant/FoodSource.h"
+#include "Ant/FoodSource.h"
+#include "Ant/AntHome.h"
 
 #if !UE_BUILD_SHIPPING
 
@@ -374,6 +375,74 @@ static void RunTests(const TArray<FString>&, UWorld* World)
     UE_LOG(LogPheromoneDebug, Log, TEXT("Pheromone tests: %d passed, %d failed"), C.Passed, C.Failed);
 }
 
+static void AntScene(const TArray<FString>& Args, UWorld* World)
+{
+    UPheromoneManager* Manager = GetManager(World);
+    if (!Manager)
+    {
+        return;
+    }
+
+    int32 FoodCount = 5;
+    int32 AntCount = 30;
+    float MinDistance = 600.f;
+    float MaxDistance = 1200.f;
+    float SpawnInterval = 1.f;
+
+    const bool bArgsValid =
+        Args.Num() <= 5
+        && (Args.Num() < 1 || FDefaultValueHelper::ParseInt(Args[0], FoodCount))
+        && (Args.Num() < 2 || FDefaultValueHelper::ParseInt(Args[1], AntCount))
+        && (Args.Num() < 3 || FDefaultValueHelper::ParseFloat(Args[2], MinDistance))
+        && (Args.Num() < 4 || FDefaultValueHelper::ParseFloat(Args[3], MaxDistance))
+        && (Args.Num() < 5 || FDefaultValueHelper::ParseFloat(Args[4], SpawnInterval));
+
+    if (!bArgsValid || FoodCount < 1 || AntCount < 0 || MinDistance <= 0.f || MaxDistance < MinDistance || SpawnInterval <= 0.f)
+    {
+        UE_LOG(LogPheromoneDebug, Warning,
+            TEXT("Usage: ant.scene [foodCount] [antCount] [minDistance] [maxDistance] [spawnInterval]"));
+        return;
+    }
+
+    for (TActorIterator<AAntAgent> It(World); It; ++It)
+    {
+        It->Destroy();
+    }
+    for (TActorIterator<AFoodSource> It(World); It; ++It)
+    {
+        It->Destroy();
+    }
+    for (TActorIterator<AAntHome> It(World); It; ++It)
+    {
+        It->Destroy();
+    }
+    Manager->Clear();
+
+    AAntHome* NewHome = World->SpawnActor<AAntHome>(AAntHome::StaticClass(),
+        FVector::ZeroVector, FRotator::ZeroRotator);
+    if (!NewHome)
+    {
+        UE_LOG(LogPheromoneDebug, Warning, TEXT("Failed to spawn the home."));
+        return;
+    }
+    NewHome->AntReserve = AntCount;
+    NewHome->SpawnInterval = SpawnInterval;
+
+    const float AngleStep = 360.f / FoodCount;
+    for (int32 Index = 0; Index < FoodCount; ++Index)
+    {
+        const float AngleDeg = AngleStep * Index + FMath::FRandRange(-AngleStep * 0.25f, AngleStep * 0.25f);
+        const float Angle = FMath::DegreesToRadians(AngleDeg);
+        const float Radius = FMath::FRandRange(MinDistance, MaxDistance);
+        const FVector Location(FMath::Cos(Angle) * Radius, FMath::Sin(Angle) * Radius, 0.f);
+        World->SpawnActor<AFoodSource>(AFoodSource::StaticClass(), Location, FRotator::ZeroRotator);
+    }
+
+    UE_LOG(LogPheromoneDebug, Log,
+        TEXT("Scene ready: 1 home with %d ants to release every %.2f s, %d food sources between %.0f and %.0f from home."),
+        AntCount, SpawnInterval, FoodCount, MinDistance, MaxDistance);
+}
+
 static FAutoConsoleCommandWithWorldAndArgs DumpCommand(
     TEXT("pheromone.dump"),
     TEXT("Logs every live pheromone deposit."),
@@ -403,5 +472,10 @@ static FAutoConsoleCommandWithWorldAndArgs TestCommand(
     TEXT("pheromone.test"),
     TEXT("Runs the pheromone scenarios and prints PASS or FAIL. Clears all deposits."),
     FConsoleCommandWithWorldAndArgsDelegate::CreateStatic(&RunTests));
+
+static FAutoConsoleCommandWithWorldAndArgs AntSceneCommand(
+    TEXT("ant.scene"),
+    TEXT("Creates a home at the origin and food sources around it. The home releases one ant per second."),
+    FConsoleCommandWithWorldAndArgsDelegate::CreateStatic(&AntScene));
 
 #endif
