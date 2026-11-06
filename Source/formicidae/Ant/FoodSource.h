@@ -24,7 +24,7 @@ public:
     int32 MaxAmount = 20;
 
     UPROPERTY(EditAnywhere, Category = "Food")
-    float RegenPerSecond = 0.5f;
+    float RegenPerSecond = 0.0f;
 
 protected:
     virtual void BeginPlay() override;

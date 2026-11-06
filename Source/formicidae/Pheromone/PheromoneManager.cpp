@@ -44,10 +44,6 @@ void UPheromoneManager::DrawDebug() const
             2.f,
             FVector(1.0, 0.0, 0.0), FVector(0.0, 1.0, 0.0),
             false);
-
-        DrawDebugString(World, Center + FVector(0.0, 0.0, 20.0),
-            FString::Printf(TEXT("%s %.0f"), TypeLetter(Entry.Type), Entry.Strength),
-            nullptr, Color, 0.f, true);
     }
 }
 
